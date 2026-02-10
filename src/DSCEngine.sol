@@ -20,10 +20,13 @@ contract DSCEngine is ReentrancyGuard {
     //     Errors    //
     ///////////////////
 
+    // These custom errors enforce protocol rules and revert transactions early with gas-efficient messages.
+
     error DSCEngine__TokenAddressesAndPriceFeedAddressesAmountsDontMatch();
     error DSCEngine__NeedsMoreThanZero();
     error DSCEngine__TokenNotAllowed(address token);
     error DSCEngine__TransferFailed();
+    // builds trust in your DSC stablecoin by prioritizing overcollateralization.
     error DSCEngine__HealthFactorBroken(uint256 healthFactor);
     error DSCEngine__HealthFactorOk();
     error DSCEngine__HealthFactorNotImproved();
@@ -46,6 +49,7 @@ contract DSCEngine is ReentrancyGuard {
 
     // DSC token
     DecentralizedStableCoin private immutable _DSC;
+   
 
     ///////////////////
     //   Constants   //
@@ -53,9 +57,12 @@ contract DSCEngine is ReentrancyGuard {
 
     uint256 private constant _LIQUIDATION_THRESHOLD = 150; // 150%
     uint256 private constant _LIQUIDATION_PRECISION = 1e18;
+    //Precision refers to the number of decimal places used in smart contract calculations to maintain accuracy when handling token amounts and ratios.
     uint256 private constant _FEED_PRECISION = 1e8; // typical Chainlink
     uint256 private constant _ADDITIONAL_FEED_PRECISION = 1e10; // to scale 1e8 -> 1e18
     uint256 private constant _PRECISION = 1e18;
+
+    
 
     ////////////////
     //   Events   //
@@ -67,10 +74,10 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////
     //   Modifiers   //
     ///////////////////
-
+// Write ONCE, use EVERYWHERE:
     modifier moreThanZero(uint256 amount) {
     _moreThanZero(amount);
-    _;
+    _;     // pass
 }
 
 function _moreThanZero(uint256 amount) internal pure {
