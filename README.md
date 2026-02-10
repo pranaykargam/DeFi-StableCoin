@@ -2,7 +2,7 @@
 
 DeFi `decentralized finance`, uses blockchain smart contracts to offer financial services like `lending`, `borrowing`, `trading`, and earning interest without banks or intermediaries.
 
-<img src = "../Images/img-01.png">
+<img src = "./Images/img-01.png">
 
 ## How It Works?📊
 DeFi runs on public blockchains, primarily Ethereum, where decentralized apps (dApps) execute peer-to-peer transactions via automated smart contracts that enforce rules transparently.
@@ -31,7 +31,7 @@ It provides permissionless access, `lower fees`, and `24/7` availability, but in
 
 ## Unstable 𝐕𝐒.  Stable 
 
-<img src = "../Images/img-02.png"  >
+<img src = "./Images/img-02.png"  >
 
 # Why do we care?
 
@@ -155,7 +155,7 @@ Example: Terra's UST used Luna. Luna only had value tied to UST—both crashed i
 
 ## 04.  Designs of top Stablecoins
 
-<img src = "../Images/img-03.png"  >
+<img src = "./Images/img-03.png"  >
 
 The text categorizes stablecoins by three traits:
  `Pegged` (fixed to ~$1) vs. `Floating` (value adjusts algorithmically for stability); `Algorithmic` (code-driven minting/burning) vs. `Governed` (human oversight); `Exogenously Collateralized` (backed by external assets like ETH or USD) vs. `Endogenously` (backed by its own sister token).
@@ -169,7 +169,7 @@ DAI, from MakerDAO, is pegged, algorithmic, and exogenously collateralized—use
 ## `Why Use Them`?
 Despite fees (like DAI's), they enable DeFi borrowing/lending without selling volatile crypto, preserving upside exposure while providing USD-like stability. Top ones like USDC/DAI remain influential today.
 
-<img src = "../Images/img-04.png"  >
+<img src = "./Images/img-04.png"  >
 
 
 ## What do stablecoins really do?
@@ -186,7 +186,7 @@ Whales (`big investors`) drive the real action:
 
  They deposit assets like ETH as collateral to mint stablecoins, sell them, and buy more ETH for leveraged trading—amplifying gains (or losses) with borrowed power. Platforms like Aave promote this for maxing positions.
 
- <img src = "../Images/img-05.png"  >
+ <img src = "./Images/img-05.png"  >
 
 `In short`:
 
