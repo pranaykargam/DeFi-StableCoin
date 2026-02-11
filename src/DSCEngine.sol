@@ -42,13 +42,24 @@ contract DSCEngine is ReentrancyGuard {
     mapping(address user => mapping(address token => uint256 amount)) private _collateralDeposited;
 
     // user => DSC minted (debt)
-    mapping(address user => uint256 dscMinted) private _dscMinted;
+    mapping(address user => uint256 amountDscMinted) private _dscMinted;
 
     // list of collateral tokens
     address[] private _collateralTokens;
 
     // DSC token
     DecentralizedStableCoin private immutable _DSC;
+    address[] private sCollateralTokens;
+
+    uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
+uint256 private constant PRECISION = 1e18;
+
+function getUsdValue(address token, uint256 amount) public view returns(uint256){
+    AggregatorV3Interface priceFeed = AggregatorV3Interface(_priceFeeds[token]);
+    (,int256 price,,,) = priceFeed.latestRoundData();
+
+    return (uint256(price) * ADDITIONAL_FEED_PRECISION * amount) / PRECISION;
+}
    
 
     ///////////////////
@@ -102,6 +113,7 @@ function _isAllowedToken(address token) internal view {
     //  Constructor  //
     ///////////////////
 
+// Contract's "Setup Phase" (Runs ONCE at deployment)
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesAmountsDontMatch();
@@ -109,7 +121,9 @@ function _isAllowedToken(address token) internal view {
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             _priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+              sCollateralTokens.push(tokenAddresses[i]);
             _collateralTokens.push(tokenAddresses[i]);
+
         }
 
        _DSC = DecentralizedStableCoin(dscAddress);
@@ -137,6 +151,7 @@ function _isAllowedToken(address token) internal view {
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
+         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     function depositCollateralAndMintDsc(
@@ -158,16 +173,15 @@ function _isAllowedToken(address token) internal view {
     //   Mint / Burn Logic   //
     ///////////////////////////
 
-    function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) {
-        _dscMinted[msg.sender] += amountDscToMint;
-
-        _revertIfHealthFactorIsBroken(msg.sender);
-
-        bool success = _DSC.mint(msg.sender, amountDscToMint);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
-    }
+   /*
+    * @param amountDscToMint: The amount of DSC you want to mint
+    * You can only mint DSC if you have  enough collateral
+    */
+function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
+     _dscMinted[msg.sender] += amountDscToMint;
+      _revertIfHealthFactorIsBroken(msg.sender);
+      _DSC.mint(msg.sender, amountDscToMint);
+}
 
     function burnDsc(uint256 amountDscToBurn) public moreThanZero(amountDscToBurn) {
         _dscMinted[msg.sender] -= amountDscToBurn;
@@ -181,6 +195,32 @@ function _isAllowedToken(address token) internal view {
 
         _revertIfHealthFactorIsBroken(msg.sender);
     }
+
+///////////////////////////////////////////
+//   Private & Internal View Functions   //
+///////////////////////////////////////////
+
+
+
+
+/*
+ * Returns how close to liquidation a user is
+ * If a user goes below 1, then they can be liquidated.
+*/
+function _healthFactor(address user) private view returns(uint256){
+    (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+    if (totalDscMinted == 0) {
+        return type(uint256).max;
+    }
+    uint256 collateralAdjustedForThreshold =
+        (collateralValueInUsd * _LIQUIDATION_THRESHOLD) / 100;
+    return (collateralAdjustedForThreshold * _LIQUIDATION_PRECISION) / totalDscMinted;
+}
+
+function _getAccountInformation(address user) private view returns(uint256 totalDscMinted,uint256 collateralValueInUsd){
+    totalDscMinted =  _dscMinted[user];
+    collateralValueInUsd = getAccountCollateralValue(user);
+}
 
     ///////////////////////////
     //   Redeem / Withdraw   //
@@ -216,7 +256,12 @@ function _isAllowedToken(address token) internal view {
     //     Liquidation       //
     ///////////////////////////
 
-    function liquidate(address user, address tokenCollateralAddress, uint256 collateralToLiquidate, uint256 dscToBurn)
+    function liquidate(
+        address user,
+         address tokenCollateralAddress,
+          uint256 collateralToLiquidate,
+           uint256 dscToBurn
+    )
         external
         moreThanZero(collateralToLiquidate)
         moreThanZero(dscToBurn)
@@ -226,7 +271,7 @@ function _isAllowedToken(address token) internal view {
         if (startingHealth >= _LIQUIDATION_PRECISION) {
             revert DSCEngine__HealthFactorOk();
         }
-
+  // Burn user's DSC debt, sent in by liquidator
         _dscMinted[user] -= dscToBurn;
 
         bool success = _DSC.transferFrom(msg.sender, address(this), dscToBurn);
@@ -235,6 +280,7 @@ function _isAllowedToken(address token) internal view {
         }
         _DSC.burn(dscToBurn);
 
+          // Send collateral to liquidator
         _collateralDeposited[user][tokenCollateralAddress] -= collateralToLiquidate;
         bool successColl = IERC20(tokenCollateralAddress).transfer(msg.sender, collateralToLiquidate);
         if (!successColl) {
@@ -289,6 +335,7 @@ function _isAllowedToken(address token) internal view {
 
         // price: 1e8, amount: 1e18 → result 1e18
         return (uint256(price) * _ADDITIONAL_FEED_PRECISION * amount) / _PRECISION;
+        
     }
 
     function _getAccountValues(address user) private view returns (uint256 collateralValue, uint256 dscValue) {
@@ -319,4 +366,21 @@ function _isAllowedToken(address token) internal view {
     function getCollateralTokens() external view returns (address[] memory) {
         return _collateralTokens;
     }
+
+//////////////////////////////////////////
+//   Public & External View Functions   //
+//////////////////////////////////////////
+
+
+function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
+    for(uint256 i = 0; i < _collateralTokens.length; i++){
+        address token = _collateralTokens[i];
+        uint256 amount = _collateralDeposited[user][token];
+        totalCollateralValueInUsd += _getUsdValue(token, amount);
+    }
+    return totalCollateralValueInUsd;
 }
+}
+
+
+
