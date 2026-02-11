@@ -26,10 +26,12 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__NeedsMoreThanZero();
     error DSCEngine__TokenNotAllowed(address token);
     error DSCEngine__TransferFailed();
-    // builds trust in your DSC stablecoin by prioritizing overcollateralization.
+    // builds trust in your DSC stablecoin by prioritizing .
     error DSCEngine__HealthFactorBroken(uint256 healthFactor);
     error DSCEngine__HealthFactorOk();
     error DSCEngine__HealthFactorNotImproved();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__MintFailed();
 
     /////////////////////////
     //   State Variables   //
@@ -53,6 +55,9 @@ contract DSCEngine is ReentrancyGuard {
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
 uint256 private constant PRECISION = 1e18;
+uint256 private constant LIQUIDATION_THRESHOLD = 50;
+uint256 private constant LIQUIDATION_PRECISION = 100;
+uint256 private constant MIN_HEALTH_FACTOR = 1e18;
 
 function getUsdValue(address token, uint256 amount) public view returns(uint256){
     AggregatorV3Interface priceFeed = AggregatorV3Interface(_priceFeeds[token]);
@@ -67,7 +72,7 @@ function getUsdValue(address token, uint256 amount) public view returns(uint256)
     ///////////////////
 
     uint256 private constant _LIQUIDATION_THRESHOLD = 150; // 150%
-    uint256 private constant _LIQUIDATION_PRECISION = 1e18;
+    uint256 private constant _MIN_HEALTH_FACTOR = 1e18;
     //Precision refers to the number of decimal places used in smart contract calculations to maintain accuracy when handling token amounts and ratios.
     uint256 private constant _FEED_PRECISION = 1e8; // typical Chainlink
     uint256 private constant _ADDITIONAL_FEED_PRECISION = 1e10; // to scale 1e8 -> 1e18
@@ -180,7 +185,12 @@ function _isAllowedToken(address token) internal view {
 function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
      _dscMinted[msg.sender] += amountDscToMint;
       _revertIfHealthFactorIsBroken(msg.sender);
-      _DSC.mint(msg.sender, amountDscToMint);
+    bool minted =   _DSC.mint(msg.sender, amountDscToMint);
+
+    if(!minted){
+        revert DSCEngine__MintFailed();
+    }
+      
 }
 
     function burnDsc(uint256 amountDscToBurn) public moreThanZero(amountDscToBurn) {
@@ -214,7 +224,7 @@ function _healthFactor(address user) private view returns(uint256){
     }
     uint256 collateralAdjustedForThreshold =
         (collateralValueInUsd * _LIQUIDATION_THRESHOLD) / 100;
-    return (collateralAdjustedForThreshold * _LIQUIDATION_PRECISION) / totalDscMinted;
+    return (collateralAdjustedForThreshold * MIN_HEALTH_FACTOR) / totalDscMinted;
 }
 
 function _getAccountInformation(address user) private view returns(uint256 totalDscMinted,uint256 collateralValueInUsd){
@@ -268,7 +278,7 @@ function _getAccountInformation(address user) private view returns(uint256 total
         nonReentrant
     {
         uint256 startingHealth = _getAccountHealthFactor(user);
-        if (startingHealth >= _LIQUIDATION_PRECISION) {
+        if (startingHealth >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__HealthFactorOk();
         }
   // Burn user's DSC debt, sent in by liquidator
@@ -299,7 +309,7 @@ function _getAccountInformation(address user) private view returns(uint256 total
 
     function _revertIfHealthFactorIsBroken(address user) internal view {
         uint256 healthFactor = _getAccountHealthFactor(user);
-        if (healthFactor < _LIQUIDATION_PRECISION) {
+        if (healthFactor < MIN_HEALTH_FACTOR) {
             revert DSCEngine__HealthFactorBroken(healthFactor);
         }
     }
@@ -312,7 +322,7 @@ function _getAccountInformation(address user) private view returns(uint256 total
 
         uint256 collateralAdjustedForThreshold =
             (collateralValueInUsd * _LIQUIDATION_THRESHOLD) / 100;
-        return (collateralAdjustedForThreshold * _LIQUIDATION_PRECISION) / totalDscMinted;
+        return (collateralAdjustedForThreshold * MIN_HEALTH_FACTOR) / totalDscMinted;
     }
 
     function _getAccountCollateralValueInUsd(address user) internal view returns (uint256) {
