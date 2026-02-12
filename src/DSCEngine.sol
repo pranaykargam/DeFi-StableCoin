@@ -159,20 +159,16 @@ function _isAllowedToken(address token) internal view {
          _revertIfHealthFactorIsBroken(msg.sender);
     }
 
-    function depositCollateralAndMintDsc(
-        address tokenCollateralAddress,
-        uint256 amountCollateral,
-        uint256 amountDscToMint
-    )
-        external
-        moreThanZero(amountCollateral)
-        moreThanZero(amountDscToMint)
-        nonReentrant
-        isAllowedToken(tokenCollateralAddress)
-    {
-        depositCollateral(tokenCollateralAddress, amountCollateral);
-        mintDsc(amountDscToMint);
-    }
+   /*
+ * @param tokenCollateralAddress: the address of the token to deposit as collateral
+ * @param amountCollateral: The amount of collateral to deposit
+ * @param amountDscToMint: The amount of DecentralizedStableCoin to mint
+ * @notice: This function will deposit your collateral and mint DSC in one transaction
+ */
+function depositCollateralAndMintDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToMint) external {
+    depositCollateral(tokenCollateralAddress, amountCollateral);
+    mintDsc(amountDscToMint);
+}
 
     ///////////////////////////
     //   Mint / Burn Logic   //
@@ -235,7 +231,12 @@ function _getAccountInformation(address user) private view returns(uint256 total
     ///////////////////////////
     //   Redeem / Withdraw   //
     ///////////////////////////
-
+/*
+ * @param tokenCollateralAddress: the collateral address to redeem
+ * @param amountCollateral: amount of collateral to redeem
+ * @param amountDscToBurn: amount of DSC to burn
+ * This function burns DSC and redeems underlying collateral in one transaction
+ */
     function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)

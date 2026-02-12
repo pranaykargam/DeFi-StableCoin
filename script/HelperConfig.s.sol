@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import { Script } from "forge-std/Script.sol";
-import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
+import {MockV3Aggregator} from "../test/mocks/MockV3AggregatorV3.t.sol";
 import {ERC20Mock} from "../lib/openzeppelin-contracts/contracts/mocks/token/ERC20Mock.sol";
 pragma solidity ^0.8.18;
 
