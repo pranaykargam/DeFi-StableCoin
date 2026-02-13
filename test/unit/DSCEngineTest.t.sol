@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.18;
 
-import { DeployDSC } from "../../script/DeployDSC.s.sol";
-import { DSCEngine } from "../../src/DSCEngine.sol";
-import { DecentralizedStableCoin } from "../../src/DecentralizedStableCoin.sol";
-import { Test, console } from "forge-std/Test.sol";
+import {DeployDSC} from "../../script/DeployDSC.s.sol";
+import {DSCEngine} from "../../src/DSCEngine.sol";
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+import {Test,console} from "forge-std/Test.sol";
 import {HelperConfig} from  "../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
@@ -26,6 +26,7 @@ uint256 public constant STARTING_ERC20_BALANCE = 10 ether;
         (dsc, dsce,config) = deployer.run();
                 (ethUsdPriceFeed, , weth, , ) = config.activeNetworkConfig();
                  ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
+                      console.log("DSC.owner in test:", dsc.owner()); 
                 
     }
 
@@ -48,6 +49,9 @@ function testGetUsdValue() public view {
 function testRevertsIfCollateralZero() public {
     vm.startPrank(USER);
         ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
+
+
+
    
 
     vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
