@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
@@ -15,7 +14,7 @@ contract DeployDSC is Script {
         external
         returns (DecentralizedStableCoin, DSCEngine, HelperConfig)
     {
-        HelperConfig helperConfig = new HelperConfig(); // comes with mocks for local
+        HelperConfig helperConfig = new HelperConfig();
         (
             address wethUsdPriceFeed,
             address wbtcUsdPriceFeed,
@@ -24,16 +23,18 @@ contract DeployDSC is Script {
             uint256 deployerKey
         ) = helperConfig.activeNetworkConfig();
 
+        // 1) derive deployer address from private key
+        address deployer = vm.addr(deployerKey);
+
         // Build the arrays for DSCEngine
         tokenAddresses = [weth, wbtc];
         priceFeedAddresses = [wethUsdPriceFeed, wbtcUsdPriceFeed];
 
+        // 2) all txs from `deployer`
         vm.startBroadcast(deployerKey);
 
-        // Updated DSC constructor takes an owner address
-        DecentralizedStableCoin dsc = new DecentralizedStableCoin(
-            msg.sender
-        );
+        // 3) pass *deployer* as initialOwner
+        DecentralizedStableCoin dsc = new DecentralizedStableCoin(deployer);
 
         DSCEngine engine = new DSCEngine(
             tokenAddresses,
@@ -41,7 +42,7 @@ contract DeployDSC is Script {
             address(dsc)
         );
 
-        // Transfer ownership of the DSC to the engine so it can mint/burn
+        // 4) transferOwnership called by the same owner (deployer)
         dsc.transferOwnership(address(engine));
 
         vm.stopBroadcast();
