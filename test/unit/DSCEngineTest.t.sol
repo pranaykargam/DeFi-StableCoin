@@ -257,8 +257,4 @@ function testGetTokenAmountFromUsd() public view {
     // With 2000 price and FEED_PRECISION 1e8, should be 1 ETH
     assertEq(amount, 1e18);
 }
-
-
-
-
 }

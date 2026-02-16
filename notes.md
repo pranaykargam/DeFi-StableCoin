@@ -17,3 +17,4 @@
  forge test -vv
 
   foge test --gas-report
+  forge coverage --report
