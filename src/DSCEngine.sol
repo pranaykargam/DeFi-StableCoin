@@ -228,6 +228,15 @@ contract DSCEngine is ReentrancyGuard {
         return (collateralAdjustedForThreshold * MIN_HEALTH_FACTOR) / totalDscMinted;
     }
 
+    function getAccountInformation(address user)
+    external
+    view
+    returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
+{
+    return _getAccountInformation(user);
+}
+
+
     function _getAccountInformation(address user)
         private
         view
