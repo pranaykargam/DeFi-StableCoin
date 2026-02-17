@@ -17,6 +17,7 @@ contract DecentralizedStableCoinTest is Test {
         dsc.mint(user, 10e18);
         assertEq(dsc.balanceOf(user), 10e18);
     }
+    
 
     function testNonOwnerCannotMint() public {
         vm.prank(user);

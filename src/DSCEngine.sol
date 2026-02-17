@@ -114,6 +114,12 @@ contract DSCEngine is ReentrancyGuard {
      * @param tokenCollateralAddress ERC20 collateral token
      * @param amountCollateral amount to deposit
      */
+
+     /*//////////////////////////////////////////////////////////////
+                            DEPOSITE FUNCTION
+    //////////////////////////////////////////////////////////////*/
+
+   // function name(parameters) visibility modifiers { body }
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)
@@ -132,12 +138,17 @@ contract DSCEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
+
+
     /*
      * @param tokenCollateralAddress: the address of the token to deposit as collateral
      * @param amountCollateral: The amount of collateral to deposit
      * @param amountDscToMint: The amount of DecentralizedStableCoin to mint
      * @notice: This function will deposit your collateral and mint DSC in one transaction
      */
+
+
+
     function depositCollateralAndMintDsc(
         address tokenCollateralAddress,
         uint256 amountCollateral,
@@ -155,6 +166,12 @@ contract DSCEngine is ReentrancyGuard {
      * @param amountDscToMint: The amount of DSC you want to mint
      * You can only mint DSC if you have enough collateral
      */
+
+    ///////////////////////////
+    //   Mint   //
+    ///////////////////////////
+
+
     function mintDsc(uint256 amountDscToMint)
         public
         moreThanZero(amountDscToMint)
@@ -169,7 +186,16 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function burnDsc(uint256 amountDscToBurn) public moreThanZero(amountDscToBurn) {
+ 
+
+      ///////////////////////////
+    //   Burn Logic   //
+    ///////////////////////////
+
+    function burnDsc(uint256 amountDscToBurn)
+    
+     public moreThanZero(amountDscToBurn) 
+     {
         sDscMinted[msg.sender] -= amountDscToBurn;
 
         bool success = I_DSC.transferFrom(msg.sender, address(this), amountDscToBurn);
@@ -198,7 +224,16 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function _redeemCollateral(
+
+   /////////////////////////////////
+    //  reedemColateral  // 
+    /////////////////////////////////
+    
+    //handles the withdrawal of collateral tokens deposited by users. 
+
+    // function name, parameters, visibility, -- body 
+    // it does not have any modifiers because it is a private 
+   function _redeemCollateral(
         address tokenCollateralAddress,
         uint256 amountCollateral,
         address from,
