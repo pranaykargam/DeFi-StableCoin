@@ -102,7 +102,7 @@ Fully backed by off-chain reserves (cash/treasuries) via Circle; 1:1 USD redeema
  `Centralized`: Easy, trusted companies back with dollars. 
  `Decentralized`: Code-run, no boss, but riskier peg.
 
-
+### still in process.....
 
 
 
